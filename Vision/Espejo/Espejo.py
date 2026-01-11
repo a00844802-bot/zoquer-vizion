@@ -3,7 +3,7 @@ Sistema de Visión Robot de Fútbol con Cámara a Espejo
 Detecta: Pelota, Portería Rival, Portería Propia
 Envía datos por UART: distancia y ángulo de cada objeto
 """
-
+# 1/10/2026
 import sensor
 import time
 import pyb
