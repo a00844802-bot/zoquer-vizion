@@ -1,0 +1,16 @@
+{
+	"folders": [
+		{
+			"path": "../../../../../GitHub/zoquer-vizion"
+		},
+		{
+			"name": "ArduinoBlind",
+			"path": "../../../ArduinoBlind"
+		},
+		{
+			"name": "PID",
+			"path": "../.."
+		}
+	],
+	"settings": {}
+}
