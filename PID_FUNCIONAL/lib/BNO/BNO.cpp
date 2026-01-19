@@ -1,5 +1,5 @@
 #include "Arduino.h"
-#include "Bno.h"
+#include "BNO.h"
 #include "cmath"
 
 // https://www.allaboutcircuits.com/projects/bosch-absolute-orientation-sensor-bno055/
