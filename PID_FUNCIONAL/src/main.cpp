@@ -41,7 +41,7 @@ void loop() {
     double error = my_bno.GetError();
     double pid_out = -pid.Calculate(error);
 
-    // DEBUG PID + BNO
+    // ===== DEBUG PID + BNO =====
     Serial.print("Yaw:");
     Serial.print(yaw);
     Serial.print(",");
@@ -52,7 +52,9 @@ void loop() {
 
     Serial.print("PID:");
     Serial.println(pid_out);
+    // ==========================
 
     motors.MoveMotorsImu(0, 0, pid_out);
 
+    delay(20); // 50 Hz
 }
