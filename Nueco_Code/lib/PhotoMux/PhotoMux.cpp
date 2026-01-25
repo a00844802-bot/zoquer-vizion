@@ -5,10 +5,10 @@ PhotoMux::PhotoMux(const uint8_t selectPins[3], const uint8_t muxPins[4]) {
     memcpy(_selectPins, selectPins, 3);
     memcpy(_muxPins, muxPins, 4);
 
-    thresholds[FRONT] = 2400; //400
-    thresholds[LEFT] = 1500; //410
-    thresholds[RIGHT] = 2600;
-    thresholds[BACK] = 2930;
+    thresholds[FRONT] = 2100; //400
+    thresholds[LEFT] = 2100; //410
+    thresholds[RIGHT] = 2100;
+    thresholds[BACK] = 2100;
 
     frontSensors = nullptr;
     leftSensors = nullptr;
