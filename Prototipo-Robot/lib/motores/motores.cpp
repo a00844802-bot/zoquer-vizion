@@ -128,10 +128,10 @@ void Motors::MoveMotorsImu(double degree, uint8_t speed, double w)
     float t4 = cos((225 + degree) * PI / 180) * speed;
 
 
-    float m1 = t1 + w;   // M1 +
-    float m2 = t2 + w;   // M2 -
-    float m3 = t3 + w;   // M3 +
-    float m4 = t4 + w;   // M4 -
+    float m1 = t1 + w;
+    float m2 = t2 + w;
+    float m3 = t3 + w;
+    float m4 = t4 + w;  
 
 
     int speedA = constrain(abs((int)m1), 0, 255);

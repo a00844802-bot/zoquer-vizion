@@ -6,7 +6,7 @@
 #include "constantes.h"
 
 BNO055 bno;
-PID pid(1, 0.0001, 0.1, 300);
+PID pid(1.5, 0, 0, 100);
 
 const uint8_t Speed = 90;
 float setpoint = 0.0f;
