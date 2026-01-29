@@ -11,6 +11,7 @@ class BNO055
 {
 private:
     double yaw_;
+    double raw_yaw_;
     double roll_;
     double pitch_;
     double target_angle_;
@@ -20,6 +21,7 @@ private:
 public:
     BNO055();
     void InitializeBNO();
+    double NormalizeAngle(double angle);
     void GetBNOData();
     double GetYaw();
     double GetRoll();

@@ -4,6 +4,7 @@
 
 
 const double DeadEnd = 2.0; // Deadband for yaw error
+const double I_DEADBAND = 1.5; // grados
 const int MOTOR3_IN1 = 34; //34
 const int MOTOR3_IN2 = 33; //33
 const int MOTOR3_PWM = 4; 

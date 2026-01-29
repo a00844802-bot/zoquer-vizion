@@ -7,6 +7,7 @@
 BNO055::BNO055()
 {
     yaw_ = 0;
+    raw_yaw_ = 0;
     target_angle_ = 0;
     difference_angle_ = 0;
 }
@@ -32,20 +33,25 @@ void BNO055::InitializeBNO()
     bno_.setExtCrystalUse(true);
     Serial.println("BNO055 initialized successfully!");
 }
+double BNO055::NormalizeAngle(double angle)
+{
+    // Método robusto usando fmod
+    while (angle > 180.0) {
+        angle -= 360.0;
+    }
+    while (angle < -180.0) {
+        angle += 360.0;
+    }
+    return angle;
+}
 
 // Retrieve the yaw angle (x) from the BNO055 sensor using quaternion data from the euler vector
 void BNO055::GetBNOData()
 {
     imu::Vector<3> euler = bno_.getVector(Adafruit_BNO055::VECTOR_EULER);
-    yaw_ = euler.x();
-    if (yaw_ > 180)
-    {
-        yaw_ = -1 * (360 - yaw_);
-    }
-    if (yaw_ < -180)
-    {
-        yaw_ = 360 + yaw_;
-    }   
+    raw_yaw_ = euler.x();
+    yaw_ = NormalizeAngle(raw_yaw_);
+
 
 }
 
@@ -55,18 +61,14 @@ double BNO055::GetYaw()
 }
 
 
-void BNO055::SetTarget(double target) {
-    target_angle_ = target;
 
-    // Normalizar de uña
-    if (target_angle_ > 180) target_angle_ -= 360;
-    if (target_angle_ < -180) target_angle_ += 360;
+void BNO055::SetTarget(double target) {
+    target_angle_ = NormalizeAngle(target);
 
 }
 
 double BNO055::GetError() {
     double error = target_angle_ - yaw_;
-    if (error > 180) error -= 360;
-    if (error < -180) error += 360;
+    error = NormalizeAngle(error);
     return error;
 }

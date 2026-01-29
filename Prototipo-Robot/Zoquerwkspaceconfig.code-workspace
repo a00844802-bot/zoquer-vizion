@@ -1,0 +1,16 @@
+{
+	"folders": [
+		{
+			"path": ".."
+		},
+		{
+			"name": "PID_FUNCIONAL",
+			"path": "../../../PlatformIO/Projects/PID_FUNCIONAL"
+		},
+		{
+			"name": "Prototipo-Robot",
+			"path": "."
+		}
+	],
+	"settings": {}
+}
