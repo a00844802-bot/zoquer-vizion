@@ -41,6 +41,7 @@ private:
     double sum_error_;         // Integral acumulada
     unsigned long last_time_;  // millis() del último cálculo
     bool has_last_;            // para manejar el primer ciclo sin dt/derivada basura
+    double last_output_;       // Última salida calculada
 };
 
 #endif

@@ -11,9 +11,10 @@ PID::PID(double kp, double ki, double kd, double max_output) {
     last_error_ = 0;    
     sum_error_ = 0;
     last_time_ = millis();
+    last_output_ = 0;
 }
 
-double PID::clamp(double x, double lo, double hi){
+double PID::clamp(double x, double lo, double hi){ //Limitar Hi y Lo
     if (x < lo) return lo;
     if (x > hi) return hi;
     return x;
@@ -21,61 +22,60 @@ double PID::clamp(double x, double lo, double hi){
 
 double PID::Calculate(double error)
 {
-    const double I_DEADBAND = 1.5; // Deadband para la integral
-    
-    unsigned long current_time = millis();
-    double delta_time = (current_time - last_time_) / 1000; 
-    
-    // Evitar divisiones por cero o tiempos negativos
-    //if (delta_time <= 0 || delta_time > 1.0) {
-    //    last_time_ = current_time;
-    //   last_error_ = error;
-    //   return 0;
-    //}
-    
-    //Termino proporcional
-    double proportional = kp_ * error;
-    
-    //Termino integral
-    double integral = 0;
-    
-    // Solo integrar si el error está fuera de la deadband
-    if (fabs(error) > I_DEADBAND) {
-        // Calcular incremento de integral (método trapezoidal)
-        double integral_increment = ((error + last_error_) / 2.0) * delta_time;
-        //Cuanto sería la suma de la integral
-        double new_sum = sum_error_ + integral_increment;
-        
-        //Output de prueba con la nueva integral
-        double test_output = proportional + (ki_ * new_sum);
-        
-        //Booleanos para comparar si hay saturación
-        bool would_saturate = (fabs(test_output) > max_output_); // si esto es false procede
+    const double I_DEADBAND = 1.5; // Zona muerta para la integral
 
-        bool error_reducing_saturation = ((test_output > 0 && error < 0) || (test_output < 0 && error > 0));
-        
-        if (!would_saturate || error_reducing_saturation) {
-            sum_error_ = new_sum;
-            // Limitar la integral acumulada
-            sum_error_ = clamp(sum_error_, -max_integral_, max_integral_);
+    unsigned long current_time = millis();
+
+    if (current_time - last_time_ >= 20) // Mínimo dt de 20 ms
+    {
+        double delta_time = (current_time - last_time_) / 1000.0;
+
+        if (delta_time <= 0 || delta_time > 1.0) {
+            last_time_ = current_time;
+            last_error_ = error;
+            return last_output_; //Regresa el last ourput si no hay un dt válido
         }
+
+        //Término proporcional
+        double proportional = kp_ * error;
+
+        //Término integral
+        double integral = 0;
+
+        if (fabs(error) > I_DEADBAND) { //Valor absoluto y comprobar si está fuera de la deadband
+            
+            double integral_increment = ((error + last_error_) / 2.0) * delta_time;//Posible incremento)Trapezoide
+            double new_sum = sum_error_ + integral_increment; //Posible nueva suma
+
+            double test_output = proportional + (ki_ * new_sum);//Output de prueba
+
+            bool would_saturate = (fabs(test_output) > max_output_);//Comprobar si la saluda estaría saturada
+            bool error_reducing_saturation =
+                ((test_output > 0 && error < 0) || (test_output < 0 && error > 0)); //Comprobar si el error reduciría la saturación
+
+            if (!would_saturate || error_reducing_saturation) { //Si no hay saturación o el error reduciría la saturación
+                sum_error_ = new_sum;
+                sum_error_ = clamp(sum_error_, -max_integral_, max_integral_);
+            }
+        }
+
+        integral = ki_ * sum_error_;
+
+        //Término derivativo
+        double delta_error = (error - last_error_) / delta_time;
+        double derivative = kd_ * delta_error;
+
+        // Output final
+        double output = proportional + integral + derivative;
+        output = clamp(output, -max_output_, max_output_);
+
+        // Actualizar variables
+        last_error_ = error;
+        last_time_ = current_time;
+
+        return output;
     }
-    
-    integral = ki_ * sum_error_;
-    
-    //Calcular la Derivada
-    double delta_error = (error - last_error_) / delta_time;
-    double derivative = kd_ * delta_error;
-    
-    //Output total
-    double output = proportional + integral + derivative;
-    output = clamp(output, -max_output_, max_output_);
-    
-    // Actualizar estados
-    last_error_ = error;
-    last_time_ = current_time;
-    
-    return output;
+    return 0;
 }
 
 void PID::Reset()

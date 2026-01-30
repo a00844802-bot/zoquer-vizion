@@ -6,14 +6,15 @@
 #include "constantes.h"
 
 BNO055 bno;
-PID pid(1.5, 0, 0, 100);
+PID pid(2.5, 0.01, 0.125, 120.0); 
 
-const uint8_t Speed = 90;
-float setpoint = 0.0f;
-double current_yaw = 0.0;
+const uint8_t Speed = 120; //La velocidad dbase del robot
+float setpoint = 0.0f; //Ángulo objetivo
+double current_yaw = 0.0; //Angulo actual
+double last_speed_w = 0.0;//No se utiliza xd
 
 // Datos cámara frontal
-float ball_distance = 0, ball_angle = 0;
+float ball_distance = 0, ball_angle = 0; 
 float goal_distance = 0, goal_angle = 0;
 float own_distance  = 0, own_angle  = 0;
 
@@ -51,16 +52,16 @@ void process_serialF(const String& line) {
 void processSerial1(const String& line) {
   (void)line;
 }
-//Leer las lineas seriales
+//Leer las lineas serialees
 void readSerialLines() {
 
-  // AHORA: visión frontal por Serial1
+  //cámara frontal por Serial1
   while (Serial1.available()) {
     char c = (char)Serial1.read();
     if (c == '\r') continue;
 
     if (c == '\n') {
-      process_serialF(serial1_line);   // 👈 antes era Serial2
+      process_serialF(serial1_line); 
       serial1_line = "";
     } else {
       serial1_line += c;
@@ -68,7 +69,7 @@ void readSerialLines() {
     }
   }
 
-  // AHORA: la otra cámara (o nada) por Serial2
+  //Camara del espejo por Serial2
   while (Serial2.available()) {
     char c = (char)Serial2.read();
     if (c == '\r') continue;
@@ -83,15 +84,15 @@ void readSerialLines() {
   }
 }
 
-void DebugSerial(){
-  Serial.print("Ball_distance: ");
-  Serial.print(ball_distance);
-  Serial.print(",");
-  Serial.print("Ball_angle: ");
-  Serial.print(ball_angle);
-  Serial.print("Current_yaw:");
-  Serial.println(current_yaw);
-}
+//void DebugSerial(){
+ // Serial.print("Ball_distance: ");
+  //Serial.print(ball_distance);
+  //Serial.print(",");
+  //Serial.print("Ball_angle: ");
+  //Serial.print(ball_angle);
+  //Serial.print("Current_yaw:");
+  //Serial.println(current_yaw);
+//}
 
 void setup() {
   Serial.begin(115200);
@@ -109,28 +110,37 @@ void setup() {
 }
 
 void loop() {
-  // 1) actualizar visión
+  //Leer los datos de las camaras
   readSerialLines();
-  DebugSerial();
+  //DebugSerial();
 
-  // 2) IMU
+  //Obtener Yaw del BNO
   bno.GetBNOData();
   current_yaw = bno.GetYaw();
+  //Serial.print("Yaw_angle: ");
+  //Serial.println(current_yaw);
 
-  // 3) PID: mantener rumbo
+  //Obtener el error
   double error = bno.GetError();
+  Serial.print("Error: ");
+  Serial.println(error);
+  //Calcular la corrección del PID
   double speed_w = pid.Calculate(error);
   speed_w = constrain(speed_w, -180, 180);
 
-  // 4) Mover hacia pelota manteniendo yaw
+  //Si detecta la pelota avanza(Con PID)
   if (open_ball_seen) {
     float ang = -ball_angle;
     if (fabsf(ang) < 7.0f) ang = 0.0f;
     ang = constrain(ang, -90.0f, 90.0f);
 
-    motorss.MoveMotorsImu((int)ang, Speed, 0);
+    motorss.MoveMotorsImu((int)ang, Speed, speed_w);
   } else {
-    motorss.MoveMotorsImu(0, 0 , speed_w);
-  }
+    //Serial.print("Speed_w: ");
+    //Serial.println(speed_w);
 
+    //Sino el robot solo se acomoda
+    motorss.MoveMotorsImu(0, 0, speed_w);
+  }
+  delay(20);
 }
