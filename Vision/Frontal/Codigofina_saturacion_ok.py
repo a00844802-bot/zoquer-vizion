@@ -37,7 +37,7 @@ def initialize_open():
     sensor.set_auto_gain(False)
     sensor.set_gainceiling(16)
     sensor.set_auto_whitebal(False)
-    sensor.set_auto_exposure(False, exposure_us=19000)
+    sensor.set_auto_exposure(False, exposure_us=65000)
 
     sensor.set_brightness(-1)
     sensor.set_contrast(-3)
@@ -83,7 +83,7 @@ def main():
 
             for blob in blobs:
                 circularidad = blob.compactness()
-    
+
                 if circularidad > 0.3:
                     img.draw_rectangle(blob.rect(), color=(0, 255, 0))
                     img.draw_cross(blob.cx(), blob.cy(), color=(0, 255, 0))
@@ -99,10 +99,10 @@ def main():
 
                     distance_b = distance(blob.cx(), blob.cy())
                     angle_b = -(angle(blob.cx(), blob.cy()) - 180)
-    
+
                     break
 
-        # ===== PORTERÍA AMARILLA ===== 
+        # ===== PORTERÍA AMARILLA =====
         distance_g = 0
         angle_g = 0
 
