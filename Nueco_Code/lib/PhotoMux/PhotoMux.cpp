@@ -78,7 +78,7 @@ bool PhotoMux::isLineDetected(Side side) {
     return getAverage(side) > thresholds[side];
 }
 
-void PhotoMux::lecturaDebug(Side side) {
+/*void PhotoMux::lecturaDebug(Side side) {
     const char* sideNames[] = {"FRONT", "LEFT", "RIGHT", "BACK"};
     
     Sensor* sensors = nullptr;
@@ -132,4 +132,4 @@ void PhotoMux::lecturaDebug(Side side) {
     }
     
     Serial.println("└────────────┘\n");
-}
+}*/
