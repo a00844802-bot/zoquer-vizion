@@ -1,6 +1,5 @@
 #ifndef Bno_h
 #define Bno_h
-
 #include "Adafruit_BNO055.h"
 #include "utility/imumaths.h"
 #include "Arduino.h"
@@ -27,10 +26,15 @@ public:
     double GetRoll();
     double GetPitch();
     void SetYaw(double yaw);
-
-    //Intentar despues de que el BNO jale si que si
+    
+    // Funciones de setpoint y error
     void SetTarget(double target);
     double GetError();
+    
+    // NUEVAS FUNCIONES PARA TELEMETRÍA
+    double GetTarget();
+    double GetRawYaw();
+    void PlotAngles();  // Graficar ángulos del BNO
 };
 
 #endif
