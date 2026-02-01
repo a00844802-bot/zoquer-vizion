@@ -1,0 +1,197 @@
+import sensor
+import time
+import utime
+import pyb
+import math
+import image
+from pyb import UART
+
+ANCHO = 320
+ALTO = 240
+
+radio = 40
+ZONA_MUERTA = 50
+AREA_MINIMA = 100
+RADIO_MINIMO = 20
+PROPORCION_LINEA = 0.7
+
+# ================= UART =================
+uart = UART(3, 115200, timeout_char=0)
+uart.init(115200, bits=8, parity=None, stop=1)
+
+# =============== THRESHOLDS ===============
+TH_BALL = (40, 100, 30, 127, 20, 127)
+TH_GOAL_Y = (50, 73, -55, 48, 8, 28)
+TH_GOAL_B = (35, 100, -128, -10, -128, -10)
+
+# Threshold amplio SOLO para calibración
+TH_WIDE = (0, 100, -128, 127, -128, 127)
+
+# =============== CENTRO ==================
+X_CENTER = ANCHO // 2
+Y_CENTER = ALTO // 2
+
+# =============== INIT ====================
+def initialize_open():
+    sensor.reset()
+    sensor.set_pixformat(sensor.RGB565)
+    sensor.set_framesize(sensor.QVGA)
+    sensor.skip_frames(time=3000)
+
+    sensor.set_auto_gain(False)
+    sensor.set_gainceiling(16)
+    sensor.set_auto_whitebal(False)
+    sensor.set_auto_exposure(False, exposure_us=65000)  
+
+    sensor.set_brightness(-1)
+    sensor.set_contrast(-3)
+    sensor.set_saturation(-3)
+
+    sensor.set_hmirror(True)
+    sensor.set_transpose(True)
+# guias de calibracion
+def show_ball_guide(img):
+    img.draw_circle(X_CENTER, Y_CENTER, 40, color=((255, 0, 0)), thickness=2)
+    img.draw_string(10, 10, "Coloca la pelota", color=(255, 255, 255))
+    
+def show_goal_guide(img):
+    ancho = 100
+    alto = 80
+    x_inicio = X_CENTER - ancho//2
+    y_inicio = Y_CENTER - alto//2
+    img.draw_rectangle(x_inicio, y_inicio, ancho, alto, color=((255, 0, 0)), thickness=2)
+    img.draw_string(10, 10, "Centra la porteria", color=(255, 255, 255))
+    
+# =============== UTIL ====================
+def get_biggest_blob(blobs):
+    return max(blobs, key=lambda b: b.area()) if blobs else None
+
+def distance(cx, cy):
+    return math.sqrt((cx - X_CENTER) ** 2 + (cy - Y_CENTER) ** 2)
+
+def angle(cx, cy):
+    a = math.degrees(math.atan2(cy - Y_CENTER, cx - X_CENTER))
+    return a + 360 if a < 0 else a
+
+# AUTOCALIBRACION OPENMV
+def auto_calibrate_blob(seconds=3, margin=10, roi=None):
+    l_min, a_min, b_min = 100, 127, 127
+    l_max, a_max, b_max = 0, -128, -128
+
+    start = utime.ticks_ms()
+
+    while utime.ticks_diff(utime.ticks_ms(), start) < seconds * 1000:
+        img = sensor.snapshot()
+        
+        blobs = img.find_blobs(
+            [TH_WIDE],
+            pixels_threshold=500,
+            area_threshold=500,
+            merge=True,
+            roi=roi
+        )
+
+        blob = get_biggest_blob(blobs)
+        if not blob:
+            continue
+
+        stats = img.get_statistics(roi=blob.rect())
+
+        l_min = min(l_min, stats.l_min())
+        l_max = max(l_max, stats.l_max())
+        a_min = min(a_min, stats.a_min())
+        a_max = max(a_max, stats.a_max())
+        b_min = min(b_min, stats.b_min())
+        b_max = max(b_max, stats.b_max())
+
+    return (
+        max(0, l_min - margin),
+        min(100, l_max + margin),
+        max(-128, a_min - margin),
+        min(127, a_max + margin),
+        max(-128, b_min - margin),
+        min(127, b_max + margin)
+    )
+
+# Regiones de interes 
+def get_ball_roi():
+    radio = 40
+    x = X_CENTER - radio
+    y = Y_CENTER - radio
+    ancho = radio * 2
+    alto = radio * 2
+    return (x, y, ancho, alto)
+
+def get_goal_roi():
+    ancho = 100
+    alto = 80
+    x = X_CENTER - ancho//2
+    y = Y_CENTER - alto//2
+    return (x, y, ancho, alto)
+
+# ========== CALIBRAR TODO ==========
+def calibrate_all():
+    global TH_BALL, TH_GOAL_Y, TH_GOAL_B
+
+    print("Calibrando PELOTA...")
+    pyb.delay(2000)
+    TH_BALL = auto_calibrate_blob(3, roi=get_ball_roi())
+    print("TH_BALL:", TH_BALL)
+
+    print("Calibrando PORTERIA AMARILLA...")
+    pyb.delay(2000)
+    TH_GOAL_Y = auto_calibrate_blob(3, roi=get_goal_roi())
+    print("TH_GOAL_Y:", TH_GOAL_Y)
+
+    print("Calibrando PORTERIA AZUL...")
+    pyb.delay(2000)
+    TH_GOAL_B = auto_calibrate_blob(3, roi=get_goal_roi())
+    print("TH_GOAL_B:", TH_GOAL_B)
+
+
+def main():
+    initialize_open()
+    clock = time.clock()
+    
+    # CALIBRAR PELOTA 
+    print("Mostrando guía para PELOTA - Tienes 10 segundos")
+    start_time = utime.ticks_ms()
+    while utime.ticks_diff(utime.ticks_ms(), start_time) < 10000:
+        clock.tick()
+        img = sensor.snapshot()
+        show_ball_guide(img)
+        pyb.delay(50)
+    
+    print("¡Calibrando pelota!")
+    TH_BALL = auto_calibrate_blob(3, roi=get_ball_roi())
+    print("TH_BALL:", TH_BALL)
+    
+    # CALIBRAR PORTERÍA AMARILLA 
+    print("Mostrando guía para PORTERÍA AMARILLA - Tienes 10 segundos")
+    start_time = utime.ticks_ms()
+    while utime.ticks_diff(utime.ticks_ms(), start_time) < 10000:
+        clock.tick()
+        img = sensor.snapshot()
+        show_goal_guide(img)
+        pyb.delay(50)
+    
+    print("¡Calibrando portería amarilla!")
+    TH_GOAL_Y = auto_calibrate_blob(3, roi=get_goal_roi())
+    print("TH_GOAL_Y:", TH_GOAL_Y)
+    
+    # CALIBRAR PORTERÍA AZUL 
+    print("Mostrando guía para PORTERÍA AZUL - Tienes 10 segundos")
+    start_time = utime.ticks_ms()
+    while utime.ticks_diff(utime.ticks_ms(), start_time) < 10000:
+        clock.tick()
+        img = sensor.snapshot()
+        show_goal_guide(img)
+        pyb.delay(50)
+    
+    print("¡Calibrando portería azul!")
+    TH_GOAL_B = auto_calibrate_blob(3, roi=get_goal_roi())
+    print("TH_GOAL_B:", TH_GOAL_B)
+
+
+
+main()
