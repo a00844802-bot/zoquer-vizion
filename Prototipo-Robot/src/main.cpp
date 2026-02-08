@@ -6,17 +6,17 @@
 #include "constantes.h"
 
 BNO055 bno;
-PID pid(2.5, 0.01, 0.125, 120.0); 
+PID pid(2.5, 0.01, 0.125, 120.0);
 
 const uint8_t Speed = 120; //La velocidad base del robot
 float setpoint = 0.0f; //Ángulo objetivo
 double current_yaw = 0.0; //Angulo actual
 double last_speed_w = 0.0;//No se utiliza xd
 
-// Datos cámara frontal
-float ball_distance = 0, ball_angle = 0; 
+// Datos cámara ESPEJO
+float ball_distance = 0, ball_angle = 0;
 float goal_distance = 0, goal_angle = 0;
-float own_distance  = 0, own_angle  = 0;
+float own_distance = 0, own_angle = 0;
 bool open_ball_seen = false, goal_seen = false, own_seen = false;
 
 Motors motorss(
@@ -30,46 +30,47 @@ Motors motorss(
 String serial1_line;
 String serial2_line;
 
-//Procesar vision frontal
-void process_serialF(const String& line) {
+//Procesar vision ESPEJO
+void processSerial2(const String& line) {
   float dist, ang, g_dist, g_ang, o_dist, o_ang;
   int parsed = sscanf(line.c_str(), "%f %f %f %f %f %f",
                       &dist, &ang, &g_dist, &g_ang, &o_dist, &o_ang);
   if (parsed == 6) {
-    ball_distance = dist;  ball_angle = ang;
-    goal_distance = g_dist; goal_angle = g_ang;
-    own_distance  = o_dist; own_angle  = o_ang;
+    ball_distance = dist;
+    ball_angle = ang;
+    goal_distance = g_dist;
+    goal_angle = g_ang;
+    own_distance = o_dist;
+    own_angle = o_ang;
     open_ball_seen = (fabsf(dist) > 1e-3f);
-    goal_seen      = (fabsf(g_dist) > 1e-3f);
-    own_seen       = (fabsf(o_dist) > 1e-3f);
+    goal_seen = (fabsf(g_dist) > 1e-3f);
+    own_seen = (fabsf(o_dist) > 1e-3f);
   }
 }
 
-void processSerial1(const String& line) {
-  (void)line;
-}
-
-//Leer las lineas serialees
+//Leer las lineas seriales
 void readSerialLines() {
-  //cámara frontal por Serial1
+  /*
+  //cámara frontal por Serial1 - COMENTADO
   while (Serial1.available()) {
     char c = (char)Serial1.read();
     if (c == '\r') continue;
     if (c == '\n') {
-      process_serialF(serial1_line); 
+      //process_serialF(serial1_line);
       serial1_line = "";
     } else {
       serial1_line += c;
       if (serial1_line.length() > 120) serial1_line = "";
     }
   }
+  */
   
   //Camara del espejo por Serial2
   while (Serial2.available()) {
     char c = (char)Serial2.read();
     if (c == '\r') continue;
     if (c == '\n') {
-      processSerial1(serial2_line);
+      processSerial2(serial2_line);
       serial2_line = "";
     } else {
       serial2_line += c;
@@ -80,7 +81,7 @@ void readSerialLines() {
 
 void setup() {
   Serial.begin(115200);
-  Serial1.begin(115200);
+  //Serial1.begin(115200);
   Serial2.begin(115200);
   
   bno.InitializeBNO();
